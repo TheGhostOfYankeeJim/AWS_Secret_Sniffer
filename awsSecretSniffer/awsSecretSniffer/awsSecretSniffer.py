@@ -4,7 +4,11 @@ import boto3
 awsUser = input("What is your AWS Key ID:")
 awsSecret = input("What is your AWS Secret:")
 
-
+# moved this to outside of the s3 bucket func
+# that way the session object can be passed as a paramater if used in other functions
+session = boto3.Session(
+    aws_access_key_id=awsUser,
+    aws_secret_access_key=awsSecret)
 
 #s3 Bucket Fucn
 #Will refactor all this into an actual function
@@ -12,9 +16,6 @@ awsSecret = input("What is your AWS Secret:")
 #Kitchen Sink == Searches ALL Buckets, ALL Files, for all secrets
 #Paranoid, list bucket names and focuses on specific buckets and files to search for AWS secrets
 #Recon collects bucket names, names of files in each bucket, exports it to a text file//html report to review later. But no string searches.
-session = boto3.Session(
-    aws_access_key_id=awsUser,
-    aws_secret_access_key=awsSecret)
 
 s3Client = session.client('s3')
 
@@ -22,7 +23,7 @@ response = s3Client.list_buckets()
 
 bucketCount = 0
 
-print("These are the following buckets I can see:")
+
 
 # Might split this into a count and then ask if they want to print all bucket names
 for bucket in response['Buckets']:
@@ -30,7 +31,6 @@ for bucket in response['Buckets']:
 
 print()
 print("Total Buckets Found: " + str(bucketCount))
-
 print()
 
 listBucketsResponse = input("Would you like to list the Buckets now? (y/n)")
@@ -38,6 +38,8 @@ listBucketsResponse.lower()
 
 
 if listBucketsResponse == "y" or "yes":
+    print("These are the following buckets I can see:")
+    print()
     for bucket in response['Buckets']:
         # poor mans debugger
         print(bucket['Name'])
@@ -63,6 +65,9 @@ for page in page_iterator:
 
             # poor mans debugger
             print(obj['Key'])
+
+print()
+print("Total Objects Found in " + targetBucket + ": " + str(objectCount))
 
 
 
