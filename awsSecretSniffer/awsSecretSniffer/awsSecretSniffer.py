@@ -96,9 +96,22 @@ file_content = response['Body'].read().decode('utf-8')
 #poor mans debugger
 print(file_content)
 
-# search the files
 
-#test RegEx 
+for line in file_content.splitlines():
+    if re.search(keywordBank,line,re.IGNORECASE):
+        print(line)
+'''
+# search the files
+if re.search(keywordBank, file_content):
+    print()
+    print("Found a Hit")
+    for match in re.finditer(keywordBank,file_content,re.IGNORECASE):
+        startOfMatch = max(0, match.start() - 5)
+        endOfMatch = match.end() + 5
+        print(file_content[startOfMatch:endOfMatch])
+'''
+
+'''#test RegEx 
 if re.search(keywordBank, file_content):
     print()
     print("Found a Hit")
@@ -108,6 +121,7 @@ if re.search(keywordBank, file_content):
         # will implement an inter to scrape the values around the match for better visability 
         print(foundMatch)
 
+'''
 #s3 Glacier (Not sure how viable this will be)
 
 #lambda Func
