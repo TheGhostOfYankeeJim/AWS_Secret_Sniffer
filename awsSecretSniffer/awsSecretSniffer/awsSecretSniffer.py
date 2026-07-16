@@ -1,4 +1,5 @@
 import boto3
+import re 
 
 #setUp Session For AWS
 awsUser = input("What is your AWS Key ID:")
@@ -9,6 +10,19 @@ awsSecret = input("What is your AWS Secret:")
 session = boto3.Session(
     aws_access_key_id=awsUser,
     aws_secret_access_key=awsSecret)
+
+#Keyword, regex, entropy detection banks, etc
+
+# Will update this with some fancier regex magic
+keywordBank = ("password|passwd|pass|secret|api|token|key|cred|credentials")
+
+
+#me trying to be fancy before I've had a chance to be basic. 
+#regExBank = [
+#    ("keyword", "keyword assignment", re.compile(r"(?i)[\w.\-]*(?:" + keywordBank + r")[\w.\-]*"
+#        r"""\s*[:=]{1,2}>?\s*['"]?([^\s'"]{3,120})['"]?"""
+#    ))
+#    ]
 
 #s3 Bucket Fucn
 #Will refactor all this into an actual function
@@ -70,8 +84,29 @@ print()
 print("Total Objects Found in " + targetBucket + ": " + str(objectCount))
 
 
+#Ask For File
+targetFile = input("Which file would you like to target?")
 
+# Pull the File
+response = s3Client.get_object(Bucket=targetBucket, Key=targetFile)
 
+# Read and decode the text content
+file_content = response['Body'].read().decode('utf-8')
+
+#poor mans debugger
+print(file_content)
+
+# search the files
+
+#test RegEx 
+if re.search(keywordBank, file_content):
+    print()
+    print("Found a Hit")
+    findAllMatches = re.findall(keywordBank,file_content,re.IGNORECASE)
+    for foundMatch in findAllMatches:
+        #currently this only prints the hit for the keyword not the value or chars surrounding it
+        # will implement an inter to scrape the values around the match for better visability 
+        print(foundMatch)
 
 #s3 Glacier (Not sure how viable this will be)
 
