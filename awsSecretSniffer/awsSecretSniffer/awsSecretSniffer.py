@@ -2,23 +2,15 @@ import boto3
 import re 
 import argparse
 
-def setAuth():
-    # Get Credential Info
-    awsUser = input("What is your AWS Key ID: ")
-    awsSecret = input("What is your AWS Secret: ")
+###################################################################
+# Global Vars
+# Will update this with some fancier regex magic
+###################################################################
 
-    # moved this to outside of the s3 bucket func
-    # that way the session object can be passed as a paramater if used in other functions
-    session = boto3.Session(aws_access_key_id=awsUser,aws_secret_access_key=awsSecret)
-    return session
+keywordBank = ("password|passwd|pass|secret|api|token|key|cred|credentials")
 
-def s3WatchListMode():
-    # Will update this with some fancier regex magic
-    # makes sense to move all this outside of the function too
-    keywordBank = ("password|passwd|pass|secret|api|token|key|cred|credentials")
-
-    #fancy regexs I found online 
-    patternsBank = {
+#fancy regexs I found online 
+patternsBank = {
     "AWS Access Key": r"\b(?:AKIA|ASIA)[0-9A-Z]{16}\b",
     "GitHub Token":   r"\bghp_[0-9A-Za-z]{36}\b",
     "Slack Token":    r"\bxox[baprs]-[0-9A-Za-z-]{10,72}\b",
@@ -28,11 +20,66 @@ def s3WatchListMode():
     "Private Key":    r"-----BEGIN (?:\w+ )?PRIVATE KEY-----",
     }
 
-    hashesBank = {
+hashesBank = {
         "bcrypt hash":    r"\$2[abxy]\$\d{2}\$[./A-Za-z0-9]{53}",
         "hex hash":       r"\b[a-fA-F0-9]{32,128}\b",
      }
 
+########################## End Of Global Vals #################################
+
+
+# Set up auth so the credentials do get saved in history or on disk
+def setAuth():
+    # Get Credential Info
+    awsUser = input("What is your AWS Key ID: ")
+    awsSecret = input("What is your AWS Secret: ")
+
+   
+    # creates session object with supplied creds, and returns the session object to be used elsewhere
+    session = boto3.Session(aws_access_key_id=awsUser,aws_secret_access_key=awsSecret)
+    return session
+
+#############################
+# S3 Sniffer Methods
+#############################
+
+def s3KitchenSinkMode():
+
+    sessionAWS = setAuth()
+    s3Client = sessionAWS.client('s3')
+    response = s3Client.list_buckets()
+    bucketCount = 0
+    
+    for bucket in response['Buckets']:
+        bucketCount += 1
+
+    print()
+    print("*********************")
+    print("Total Buckets Found: " + str(bucketCount))
+    print("*********************")
+    print()
+
+
+
+def s3ParanoidMode():
+
+    sessionAWS = setAuth()
+    s3Client = sessionAWS.client('s3')
+    response = s3Client.list_buckets()
+    bucketCount = 0
+    
+    for bucket in response['Buckets']:
+        bucketCount += 1
+
+    print()
+    print("*********************")
+    print("Total Buckets Found: " + str(bucketCount))
+    print("*********************")
+    print()
+
+
+
+def s3WatchListMode():
 
     sessionAWS = setAuth()
     s3Client = sessionAWS.client('s3')
@@ -136,28 +183,40 @@ def main():
         help="S3 Only So Far"
     
     )
+    
+    parser.add_argument(
+        "--kitchensink", action="store_true", help="Enable Kitchen Sink mode."
+        )
+
+    parser.add_argument(
+        "--paranoid", action="store_true", help="Enable Paranoid mode."
+        )
+
     parser.add_argument(
         "--watchlist", action="store_true", help="Enable watchlist mode."
         )
+
+
     args = parser.parse_args()
     
     if args.AWS_Service == "S3" and args.watchlist:
-        print("Starting: " + args.AWS_Service + " in WatchList Mode")
-        print("Starting S3 Watchlist Mode")
+        print("Starting: " + args.AWS_Service + " Sniffer in WatchList Mode")
         s3WatchListMode()
+
+    if args.AWS_Service == "S3" and args.kitchensink:
+        print("Starting: " + args.AWS_Service + " Sniffer in Kitchen Sink Mode")
+        s3KitchenSinkMode()
+
+    if args.AWS_Service == "S3" and args.paranoid:
+        print("Starting: " + args.AWS_Service + " Sniffer in Paranoid Mode")
+        s3ParanoidMode()
 
 # Main Function Loop
 if __name__ == "__main__":
     main()
 
-#s3 Bucket Fucn
-#Will refactor all this into an actual function
-#Will have three modes
-#Kitchen Sink == Searches ALL Buckets, ALL Files, for secrets
-#Paranoid, list bucket names and focuses on one specific bucket but search all the files for secrets
-#WatchList, Specific Bucket and Specific File searches.
-#maybe just a numerical data return, how many buckets, files, public vs private, buckets without access etc. 
-
+# TODO:
+# Add recon mode that collects numerical data or recon switch on AWS resources? 
 
 #s3 Glacier (Not sure how viable this will be)
 
