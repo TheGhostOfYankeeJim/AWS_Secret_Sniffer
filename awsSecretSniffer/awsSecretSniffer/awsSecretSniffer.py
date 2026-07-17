@@ -3,9 +3,9 @@ import re
 import argparse
 
 def setAuth():
-    #setUp Session For AWS
-    awsUser = input("What is your AWS Key ID:")
-    awsSecret = input("What is your AWS Secret:")
+    # Get Credential Info
+    awsUser = input("What is your AWS Key ID: ")
+    awsSecret = input("What is your AWS Secret: ")
 
     # moved this to outside of the s3 bucket func
     # that way the session object can be passed as a paramater if used in other functions
@@ -14,6 +14,7 @@ def setAuth():
 
 def s3WatchListMode():
     # Will update this with some fancier regex magic
+    # makes sense to move all this outside of the function too
     keywordBank = ("password|passwd|pass|secret|api|token|key|cred|credentials")
 
     #fancy regexs I found online 
@@ -37,6 +38,9 @@ def s3WatchListMode():
     s3Client = sessionAWS.client('s3')
     response = s3Client.list_buckets()
     bucketCount = 0
+
+    for bucket in response['Buckets']:
+        bucketCount += 1
 
     print()
     print("*********************")
