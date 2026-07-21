@@ -1,3 +1,5 @@
+from tokenize import Ignore
+
 import boto3
 import re 
 import argparse
@@ -49,9 +51,24 @@ def s3KitchenSinkMode():
     s3Client = sessionAWS.client('s3')
     response = s3Client.list_buckets()
     bucketCount = 0
+    fileCount = 0
+
     
+
+
+
     for bucket in response['Buckets']:
         bucketCount += 1
+        bucketTarget = bucket['Name']
+        paginator = s3Client.get_paginator('list_objects_v2')
+        page_iterator = paginator.paginate(Bucket=bucketTarget)
+        
+        # Loop
+        for page in page_iterator:
+            if 'Contents' in page:
+                for obj in page['Contents']:
+                    fileCount = fileCount + 1
+
 
     print()
     print("*********************")
@@ -60,6 +77,85 @@ def s3KitchenSinkMode():
     print()
 
 
+
+    print()
+    print("*********************")
+    print("Total Files Found: " + str(fileCount) )
+    print("*********************")
+    print()
+
+    wantToContine = input("Would you like to search every file on every bucket?")
+
+    # Might be worth to create either a JSON/List/whatever object, that holds all the things found
+    # like Found possible keys in: 
+    # Bucket <NAME>
+    # List of Files 
+    # Right now the way this functionality works its overwhelming lol 
+    # Test range is 7 buckets with 400+ files 
+
+    if wantToContine.lower() == "y" or "yes":
+        response = s3Client.list_buckets()
+
+        for bucket in response['Buckets']:
+
+            # Create iterator for use in loop
+            bucketTarget = bucket['Name']
+            page_iterator = paginator.paginate(Bucket=bucketTarget)
+
+            print()
+            print("*********************")
+            print("Searching Bucket: " + bucketTarget)
+            print("*********************")
+            print()
+        
+            # Loop
+            for page in page_iterator:
+                if 'Contents' in page:
+                    for obj in page['Contents']:
+
+                        targetFile = obj['Key']
+
+                        response = s3Client.get_object(Bucket=bucketTarget, Key=targetFile)
+
+
+                        # Read and decode the text content
+                        # This gets Wonky
+                        file_content = response['Body'].read().decode('utf-8',errors='ignore')
+
+
+
+                        print()
+                        print("*********************")
+                        print("Searching KEYWORDS in : " + targetFile)
+                        print("*********************")
+                        print()
+
+                        # Search Function For KeywordBank
+                        for line in file_content.splitlines():
+                            if re.search(keywordBank,line,re.IGNORECASE):
+
+                                #Super dumb way to fix the huge output issue, will find better method later
+                                # Still overwelms the terminal at a certain point. Might be worth to just export this all to a HTML file
+                                if len(line) > 15:
+                                    print("The output is way to large look for yourself")
+                                else:
+                                    print(line)
+
+                        print()
+                        print("*********************")
+                        print("Searching PATTERNS in : " + targetFile)
+                        print("*********************")
+                        print()
+
+                        for label, pattern in patternsBank.items():
+                            for matchPattern in re.finditer(pattern,file_content):
+                                print(label + ": " + matchPattern.group())
+
+    print("That's all I found")
+
+
+
+ 
 
 def s3ParanoidMode():
 
