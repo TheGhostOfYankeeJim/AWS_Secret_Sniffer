@@ -16,7 +16,7 @@ Currently this only supports S3 as an AWS storage type.
 
 There are 3 methods.
 
---kitchsink
+--kitchensink
 This searches all S3 Buckets and ALL files inside each S3 Bucket. 
 
 --paranoid
