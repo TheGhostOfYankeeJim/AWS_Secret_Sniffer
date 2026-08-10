@@ -45,6 +45,7 @@ def setAuth():
 # S3 Sniffer Methods
 #############################
 
+#All Buckets all files
 def s3KitchenSinkMode():
 
     sessionAWS = setAuth()
@@ -156,14 +157,14 @@ def s3KitchenSinkMode():
 
 
  
-
+# one bucket all files
 def s3ParanoidMode():
 
     sessionAWS = setAuth()
     s3Client = sessionAWS.client('s3')
     response = s3Client.list_buckets()
     bucketCount = 0
-    
+
     for bucket in response['Buckets']:
         bucketCount += 1
 
@@ -173,8 +174,86 @@ def s3ParanoidMode():
     print("*********************")
     print()
 
+    listBucketsResponse = input("Would you like to list the Buckets now? (y/n)")
+    listBucketsResponse.lower()
 
 
+    if listBucketsResponse == "y" or "yes":
+        print("These are the following buckets I can see:")
+        print()
+        for bucket in response['Buckets']:
+            # poor mans debugger
+            print(bucket['Name'])
+
+    #maybe a search bucket name for sensitive strings func?
+    #CODE
+
+    # take bucket name func
+    print()
+    targetBucket = input("Which bucket would you like to target?")
+    objectCount = 0
+    print()
+
+    # Create paginator Obj for to hold the list of objects
+    paginator = s3Client.get_paginator('list_objects_v2')
+
+    # Create iterator for use in loop
+    page_iterator = paginator.paginate(Bucket=targetBucket)
+
+    # Loop
+    for page in page_iterator:
+        if 'Contents' in page:
+            for obj in page['Contents']:
+                objectCount = objectCount + 1
+
+                # poor mans debugger
+                #print(obj['Key'])
+
+    print()
+    print("*********************")
+    print("Total Objects Found in " + targetBucket + ": " + str(objectCount))
+    print("*********************")
+    print()
+
+    for page in page_iterator:
+        if 'Contents' in page:
+            for obj in page['Contents']:
+                targetFile = obj['Key']
+
+                response = s3Client.get_object(Bucket=targetBucket, Key=targetFile)
+
+
+                # Read and decode the text content
+                # This gets Wonky
+                file_content = response['Body'].read().decode('utf-8',errors='ignore')
+
+
+
+                print()
+                print("*********************")
+                print("Searching KEYWORDS in : " + targetFile)
+                print("*********************")
+                print()
+
+                # Search Function For KeywordBank
+                for line in file_content.splitlines():
+                    if re.search(keywordBank,line,re.IGNORECASE):
+                        print(line)
+
+
+                print()
+                print("*********************")
+                print("Searching PATTERNS in : " + targetFile)
+                print("*********************")
+                print()
+
+                for label, pattern in patternsBank.items():
+                    for matchPattern in re.finditer(pattern,file_content):
+                        print(label + ": " + matchPattern.group())
+
+    print("That's all I found")
+
+# one bucket, one file
 def s3WatchListMode():
 
     sessionAWS = setAuth()
